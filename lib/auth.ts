@@ -49,22 +49,20 @@ export const authOptions: AuthOptions = {
     signIn: "/login",
   },
   session: {
-    strategy: "jwt" as const,
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: `__Secure-next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
       },
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
-  // Remove the trustHost property
   callbacks: {
     async jwt({ token, user }: { token: JWT; user: any }) {
       if (user) {
@@ -80,7 +78,17 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
+    
+    // Make sure this redirect callback is implemented
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
   },
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
